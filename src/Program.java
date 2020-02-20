@@ -1,16 +1,23 @@
 public class Program {
-    private static final Program instance = new Program();
+    private static boolean init = false;
 
-    private Program() {
-        /*
-        DatabaseManager.setRootDirectory("database/");
-        DatabaseManager.createDirectory("files/");
-        DatabaseManager.setRootDirectory("database/files/");
-        DatabaseManager.createDirectory("poopie/");
-         */
+    public static void main(String[] args) {
+        if(init) {
+            throw new IllegalCallerException("Program may only be started once!");
+        }
+        new Program();
     }
 
-    public static Program getInstance() {
-        return instance;
+    private Program() {
+        if(init) {
+            throw new IllegalCallerException("Program may only be started once!");
+        }
+        init = true;
+        // Program starts here!
+
+        Database db = new Database("database");
+        User user = new User("daniel", "12345");
+        db.save(user);
+        db.delete(user);
     }
 }
