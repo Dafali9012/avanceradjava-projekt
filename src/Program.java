@@ -14,10 +14,7 @@ public class Program {
         }
         init = true;
         // Program starts here!
-
-        Database db = new Database("database");
-        User user = new User("daniel", "12345");
-        db.save(user);
-        db.delete(user);
+        Database<User> userDB = new Database<User>("database", "users", "usr");
+        //System.out.println("user: "+user.getUserName()+"\npassword: "+user.getPassword());
     }
 }

@@ -5,31 +5,38 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class Database {
+public class Database<C> {
     private String rootFolder;
+    private String subFolder;
+    private String fileType;
 
-    public Database(String rootFolder) {
+    public Database(String rootFolder, String subFolder, String fileType) {
         this.rootFolder = rootFolder;
-        if (!Files.exists(Paths.get(rootFolder))) {
-            try {
+        this.subFolder = subFolder;
+        this.fileType = fileType;
+
+        try {
+            if (!Files.exists(Paths.get(rootFolder))) {
                 Files.createDirectory(Paths.get(rootFolder));
-            } catch (IOException e) {
-                e.printStackTrace();
             }
+            if (!Files.exists(Paths.get(rootFolder+"/"+subFolder))) {
+                Files.createDirectory(Paths.get(rootFolder+"/"+subFolder));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
     public void save(DatabaseObject obj) {
         try {
             List<String> dataList = new ArrayList<>();
-            for (String key:obj.getData().keySet()) {
-                dataList.add(key+":"+obj.getData().get(key));
+            for (String key : obj.getData().keySet()) {
+                dataList.add(key + ":" + obj.getData().get(key));
             }
-            if (!Files.exists(Paths.get(rootFolder + "/" + obj.getSubFolder()))) {
-                Files.createDirectory(Paths.get(rootFolder + "/" + obj.getSubFolder()));
-            }
-            Files.write(Paths.get(rootFolder + "/" + obj.getSubFolder() + "/" + obj.getId()), dataList);
+            Files.write(Paths.get(rootFolder + "/" + subFolder + "/" + obj.getId() + "." + fileType), dataList);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -37,43 +44,37 @@ public class Database {
 
     public void delete(DatabaseObject obj) {
         try {
-            if(Files.exists(Paths.get(rootFolder + "/" + obj.getSubFolder()+"/"+obj.getId()))) {
-                Files.delete(Paths.get(rootFolder + "/" + obj.getSubFolder()+"/"+obj.getId()));
+            if (Files.exists(Paths.get(rootFolder + "/" + subFolder + "/" + obj.getId() + "." + fileType))) {
+                Files.delete(Paths.get(rootFolder + "/" + subFolder + "/" + obj.getId() + "." + fileType));
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public DatabaseObject findOne(String key, String value) {
-        // loop through all files and pick out the matching one
-        return new User("tempUser", "thisisnotsupposedtobehere");
-    }
+    public Object findOne(String key, String value) {
+        try (Stream<Path> walk = Files.walk(Paths.get(rootFolder+"/"+subFolder))) {
+            List<String> result = walk.map(p -> p.toString())
+                    .filter(p -> p.matches(".+\\."+fileType))
+                    .collect(Collectors.toList());
 
-    public void write(String filePath) {
+            for (String path : result) {
+                for (String keyVal : Files.readAllLines(Paths.get(path))) {
+                    if (keyVal.equals(key + ":" + value)) {
+                        LinkedHashMap<String, String> data = new LinkedHashMap<>();
 
-        Path path = Paths.get(filePath);
-        try {
-            if (!Files.exists(path)) {
-                Files.createFile(path);
+                        for (String line : Files.readAllLines(Paths.get(path))) {
+                            String[] splitLine = line.split(":");
+                            data.put(splitLine[0], splitLine[1]);
+                        }
+                        C.getConstructor().newInstance();
+                        new C();
+                    }
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    public void write(String filePath, LinkedHashMap<String, String> dataMap) {
-
-        Path path = Paths.get(filePath);
-        List<String> dataList = new ArrayList<>();
-        for (int i = 0; i < dataMap.size(); i++) {
-            String dataKey = new ArrayList<>(dataMap.keySet()).get(i);
-            dataList.add(dataKey + ":" + dataMap.get(dataKey));
-        }
-        try {
-            Files.write(path, dataList);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        return null;
     }
 }
