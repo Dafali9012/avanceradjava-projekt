@@ -14,7 +14,6 @@ public class Program {
         }
         init = true;
         // Program starts here!
-        Database<User> userDB = new Database<User>("database", "users", "usr");
-        //System.out.println("user: "+user.getUserName()+"\npassword: "+user.getPassword());
+        Database<User> userDB = new Database<>("database", "users", "usr", User.class);
     }
 }

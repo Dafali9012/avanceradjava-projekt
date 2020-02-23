@@ -15,7 +15,11 @@ public class User extends DatabaseObject {
         return data.get("username").toString();
     }
 
+    public void setUserName(String userName) { data.put("username", userName); }
+
     public String getPassword() {
         return data.get("password").toString();
     }
+
+    public void setPassword(String password) { data.put("password", password); }
 }
