@@ -1,25 +1,31 @@
-import java.util.LinkedHashMap;
+import Database.DatabaseObject;
 
 public class User extends DatabaseObject {
+    private String username;
+    private String password;
 
     public User(String username, String password) {
-        data.put("username", username);
-        data.put("password", password);
+        this.username = username;
+        this.password = password;
     }
 
-    public User(LinkedHashMap<String, String> data, String id) {
-        super(data, id);
+    public User(String id) {
+        super(id);
     }
 
-    public String getUserName() {
-        return data.get("username").toString();
+    public String getUsername() {
+        return username;
     }
 
-    public void setUserName(String userName) { data.put("username", userName); }
+    public void setUsername(String username) {
+        this.username = username;
+    }
 
     public String getPassword() {
-        return data.get("password").toString();
+        return password;
     }
 
-    public void setPassword(String password) { data.put("password", password); }
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }

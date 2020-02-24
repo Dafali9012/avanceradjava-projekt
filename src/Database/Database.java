@@ -1,8 +1,12 @@
+package Database;
+
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -22,8 +26,8 @@ public class Database<C> {
             if (!Files.exists(Paths.get(rootFolder))) {
                 Files.createDirectory(Paths.get(rootFolder));
             }
-            if (!Files.exists(Paths.get(rootFolder+"/"+subFolder))) {
-                Files.createDirectory(Paths.get(rootFolder+"/"+subFolder));
+            if (!Files.exists(Paths.get(rootFolder + "/" + subFolder))) {
+                Files.createDirectory(Paths.get(rootFolder + "/" + subFolder));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -33,11 +37,17 @@ public class Database<C> {
     public void save(DatabaseObject obj) {
         try {
             List<String> dataList = new ArrayList<>();
-            for (String key : obj.getData().keySet()) {
-                dataList.add(key + ":" + obj.getData().get(key));
+            Field[] fields = obj.getClass().getDeclaredFields();
+            for (Field f : fields) {
+                f.setAccessible(true);
+                dataList.add(f.getName() + ":" + f.get(obj));
+                f.setAccessible(false);
             }
             Files.write(Paths.get(rootFolder + "/" + subFolder + "/" + obj.getId() + "." + fileType), dataList);
+
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
     }
@@ -53,23 +63,25 @@ public class Database<C> {
     }
 
     public C findOne(String key, String value) {
-        try (Stream<Path> walk = Files.walk(Paths.get(rootFolder+"/"+subFolder))) {
+        try (Stream<Path> walk = Files.walk(Paths.get(rootFolder + "/" + subFolder))) {
             List<String> result = walk.map(p -> p.toString())
-                    .filter(p -> p.matches(".+\\."+fileType))
+                    .filter(p -> p.matches(".+\\." + fileType))
                     .collect(Collectors.toList());
 
             for (String path : result) {
                 for (String keyVal : Files.readAllLines(Paths.get(path))) {
                     if (keyVal.equals(key + ":" + value)) {
                         String fileName = Paths.get(path).getFileName().toString();
-                        LinkedHashMap<String, String> data = new LinkedHashMap<>();
-                        String id = fileName.substring(0, fileName.length()-(fileType.length()+1));
-
+                        String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
+                        C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
                         for (String line : Files.readAllLines(Paths.get(path))) {
                             String[] splitLine = line.split(":");
-                            data.put(splitLine[0], splitLine[1]);
+                            Field field = fileClass.getDeclaredField(splitLine[0]);
+                            field.setAccessible(true);
+                            field.set(obj, splitLine[1]);
+                            field.setAccessible(false);
                         }
-                        return (C) fileClass.getConstructor(LinkedHashMap.class, String.class).newInstance(data, id);
+                        return obj;
                     }
                 }
             }
