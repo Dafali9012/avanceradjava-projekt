@@ -1,4 +1,4 @@
-import Database.DatabaseObject;
+import database.DatabaseObject;
 
 public class Jacket extends DatabaseObject {
     public Jacket(String price, String name, String expirationDate) {
@@ -11,6 +11,7 @@ public class Jacket extends DatabaseObject {
         super(id);
     }
 
+    //@NonNegative
     private String price;
     private String name;
     private String expirationDate;

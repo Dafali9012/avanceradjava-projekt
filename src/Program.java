@@ -1,4 +1,5 @@
-import Database.Database;
+import database.Database;
+import enums.SearchOperation;
 
 public class Program {
     private static boolean init = false;
@@ -15,10 +16,12 @@ public class Program {
             throw new IllegalCallerException("Program may only be started once!");
         }
         init = true;
-        // Program starts here!
+        // Program starts here! //Reality Dream III Riverside?
         Database<Jacket> jacketDB = new Database<Jacket>("database", "jackets", "jkt", Jacket.class);
-        jacketDB.save(new Jacket("19.99 kr", "Magnus", "2020-01-16"));
-        jacketDB.save(new Jacket("129.99 kr", "David", "2020-02-24"));
-        jacketDB.save(new Jacket("499.99 kr", "Dennis", "2022-06-02"));
+        //System.out.println(jacketDB.findOne("brand", "Helly Hansen"));
+        //System.out.println(jacketDB.findOne("datePublished", ">", Instant.now());
+        for(Jacket j:jacketDB.findAll("price", SearchOperation.EQUALS, "129.99")) {
+            System.out.println(j.getName()+" "+j.getPrice());
+        }
     }
 }

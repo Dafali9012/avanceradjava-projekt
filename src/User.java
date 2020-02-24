@@ -1,4 +1,4 @@
-import Database.DatabaseObject;
+import database.DatabaseObject;
 
 public class User extends DatabaseObject {
     private String username;
