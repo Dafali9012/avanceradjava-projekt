@@ -1,7 +1,9 @@
 import database.DatabaseObject;
 
+import java.time.LocalDate;
+
 public class Jacket extends DatabaseObject {
-    public Jacket(String price, String name, String expirationDate) {
+    public Jacket(float price, String name, LocalDate expirationDate) {
         this.price = price;
         this.name = name;
         this.expirationDate = expirationDate;
@@ -12,15 +14,15 @@ public class Jacket extends DatabaseObject {
     }
 
     //@NonNegative
-    private String price;
+    private float price;
     private String name;
-    private String expirationDate;
+    private LocalDate expirationDate;
 
-    public String getPrice() {
+    public float getPrice() {
         return price;
     }
 
-    public void setPrice(String price) {
+    public void setPrice(float price) {
         this.price = price;
     }
 
@@ -32,11 +34,11 @@ public class Jacket extends DatabaseObject {
         this.name = name;
     }
 
-    public String getExpirationDate() {
+    public LocalDate getExpirationDate() {
         return expirationDate;
     }
 
-    public void setExpirationDate(String expirationDate) {
+    public void setExpirationDate(LocalDate expirationDate) {
         this.expirationDate = expirationDate;
     }
 }

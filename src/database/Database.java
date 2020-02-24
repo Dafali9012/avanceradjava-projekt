@@ -63,7 +63,7 @@ public class Database<C> {
         }
     }
 
-    public C findOne(String key, SearchOperation operator, String value) {
+    public C findOne(String key, SearchOperation operator, Object value) {
         try (Stream<Path> walk = Files.walk(Paths.get(rootFolder + "/" + subFolder))) {
             List<String> result = walk.map(p -> p.toString())
                     .filter(p -> p.matches(".+\\." + fileType))
@@ -86,7 +86,7 @@ public class Database<C> {
                             return obj;
                         }
                     } else if (operator == SearchOperation.CONTAINS) {
-                        if (splitKeyVal[0].equals(key) && splitKeyVal[1].contains(value)) {
+                        if (splitKeyVal[0].equals(key) && splitKeyVal[1].contains((String)value)) {
                             String fileName = Paths.get(path).getFileName().toString();
                             String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
                             C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
@@ -98,22 +98,37 @@ public class Database<C> {
                             }
                             return obj;
                         }
-                    } else if (operator == SearchOperation.LESSTHAN) {
-                        if (splitKeyVal[0].equals(key) && splitKeyVal[1].equals(value)) {
-                            String fileName = Paths.get(path).getFileName().toString();
-                            String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
-                            C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
-                            for (String line : Files.readAllLines(Paths.get(path))) {
-                                String[] splitLine = line.split(":");
-                                Field field = fileClass.getDeclaredField(splitLine[0]);
-                                field.setAccessible(true);
-                                field.set(obj, splitLine[1]);
+                    }/* else if (operator == SearchOperation.LESSTHAN) {
+                        if (splitKeyVal[0].equals(key)) {
+                            if (splitKeyVal[1] < value) {
+                                String fileName = Paths.get(path).getFileName().toString();
+                                String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
+                                C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
+                                for (String line : Files.readAllLines(Paths.get(path))) {
+                                    String[] splitLine = line.split(":");
+                                    Field field = fileClass.getDeclaredField(splitLine[0]);
+                                    field.setAccessible(true);
+                                    field.set(obj, splitLine[1]);
+                                }
+                                return obj;
                             }
-                            return obj;
                         }
                     } else if (operator == SearchOperation.GREATERTHAN) {
-
-                    }
+                        if (splitKeyVal[0].equals(key)) {
+                            if (splitKeyVal[1] > value) {
+                                String fileName = Paths.get(path).getFileName().toString();
+                                String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
+                                C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
+                                for (String line : Files.readAllLines(Paths.get(path))) {
+                                    String[] splitLine = line.split(":");
+                                    Field field = fileClass.getDeclaredField(splitLine[0]);
+                                    field.setAccessible(true);
+                                    field.set(obj, splitLine[1]);
+                                }
+                                return obj;
+                            }
+                        }
+                    }*/
                 }
             }
         } catch (Exception e) {
