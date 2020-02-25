@@ -4,6 +4,7 @@ import enums.SearchOperation;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,9 +48,7 @@ public class Database<C> {
             }
             Files.write(Paths.get(rootFolder + "/" + subFolder + "/" + obj.getId() + "." + fileType), dataList);
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
+        } catch (IOException | IllegalAccessException e) {
             e.printStackTrace();
         }
     }
@@ -68,29 +67,30 @@ public class Database<C> {
         if (op == SearchOperation.GREATERTHAN || op == SearchOperation.LESSTHAN) {
             throw new IllegalArgumentException("Cannot compare Strings with less than/ greater than");
         }
-
-        for (String path : listFiles()) {
+        List<String> filesList = listFiles();
+        if(filesList == null) return null;
+        for (String path : filesList) {
             String fileName = Paths.get(path).getFileName().toString();
             String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
             try {
-                C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
+                C obj = (C)fileClass.getConstructor(String.class).newInstance(id);
 
                 for (String line : Files.readAllLines(Paths.get(path))) {
                     String[] splitLine = line.split(":");
                     if (op == SearchOperation.CONTAINS) {
-                        if (splitLine[0].equals(key) && splitLine[1].contains(val)) {
+                        if (splitLine[0].equals(key) && splitLine[1].toLowerCase().contains(val.toLowerCase())) {
                             setFields(path, obj);
                             return obj;
                         }
                     }
                     if (op == SearchOperation.EQUALS) {
-                        if (splitLine[0].equals(key) && splitLine[1].equals(val)) {
+                        if (splitLine[0].equals(key) && splitLine[1].toLowerCase().equals(val.toLowerCase())) {
                             setFields(path, obj);
                             return obj;
                         }
                     }
                 }
-            } catch (Exception e) {
+            } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException | IOException e) {
                 e.printStackTrace();
             }
         }
@@ -98,7 +98,9 @@ public class Database<C> {
     }
 
     public C findOne(String key, float val, SearchOperation op) {
-        for (String path : listFiles()) {
+        List<String> filesList = listFiles();
+        if(filesList == null) return null;
+        for (String path : filesList) {
             String fileName = Paths.get(path).getFileName().toString();
             String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
             try {
@@ -113,19 +115,19 @@ public class Database<C> {
                         }
                     }
                     if (op == SearchOperation.EQUALS) {
-                        if (splitLine[0].equals(key) && splitLine[1].equals(val)) {
+                        if (splitLine[0].equals(key) && splitLine[1].equals(String.valueOf(val))) {
                             setFields(path, obj);
                             return obj;
                         }
                     }
-                    if(op == SearchOperation.GREATERTHAN) {
-                        if(splitLine[0].equals(key) && Float.valueOf(splitLine[1]) > val) {
+                    if (op == SearchOperation.GREATERTHAN) {
+                        if (splitLine[0].equals(key) && Float.parseFloat(splitLine[1]) > val) {
                             setFields(path, obj);
                             return obj;
                         }
                     }
-                    if(op == SearchOperation.LESSTHAN) {
-                        if(splitLine[0].equals(key) && Float.valueOf(splitLine[1]) < val) {
+                    if (op == SearchOperation.LESSTHAN) {
+                        if (splitLine[0].equals(key) && Float.parseFloat(splitLine[1]) < val) {
                             setFields(path, obj);
                             return obj;
                         }
@@ -139,7 +141,9 @@ public class Database<C> {
     }
 
     public C findOne(String key, LocalDate val, SearchOperation op) {
-        for (String path : listFiles()) {
+        List<String> filesList = listFiles();
+        if(filesList == null) return null;
+        for (String path : filesList) {
             String fileName = Paths.get(path).getFileName().toString();
             String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
             try {
@@ -154,19 +158,19 @@ public class Database<C> {
                         }
                     }
                     if (op == SearchOperation.EQUALS) {
-                        if (splitLine[0].equals(key) && splitLine[1].equals(val)) {
+                        if (splitLine[0].equals(key) && splitLine[1].equals(val.toString())) {
                             setFields(path, obj);
                             return obj;
                         }
                     }
-                    if(op == SearchOperation.GREATERTHAN) {
-                        if(splitLine[0].equals(key) && LocalDate.parse(splitLine[1]).isAfter(val)) {
+                    if (op == SearchOperation.GREATERTHAN) {
+                        if (splitLine[0].equals(key) && LocalDate.parse(splitLine[1]).isAfter(val)) {
                             setFields(path, obj);
                             return obj;
                         }
                     }
-                    if(op == SearchOperation.LESSTHAN) {
-                        if(splitLine[0].equals(key) && LocalDate.parse(splitLine[1]).isBefore(val)) {
+                    if (op == SearchOperation.LESSTHAN) {
+                        if (splitLine[0].equals(key) && LocalDate.parse(splitLine[1]).isBefore(val)) {
                             setFields(path, obj);
                             return obj;
                         }
@@ -179,19 +183,189 @@ public class Database<C> {
         return null;
     }
 
+    public List<C> findAll() {
+        List<C> result = new ArrayList<>();
+        List<String> filesList = listFiles();
+        if(filesList == null) return null;
+        for (String path : filesList) {
+            String fileName = Paths.get(path).getFileName().toString();
+            String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
+            try {
+                C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
+                setFields(path, obj);
+                result.add(obj);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (result.size() == 0) {
+            return null;
+        } else {
+            return result;
+        }
+    }
+
+    public List<C> findAll(String key, String val, SearchOperation op) {
+        if (op == SearchOperation.GREATERTHAN || op == SearchOperation.LESSTHAN) {
+            throw new IllegalArgumentException("Cannot compare Strings with less than/ greater than");
+        }
+        List<C> result = new ArrayList<>();
+        List<String> filesList = listFiles();
+        if(filesList == null) return null;
+
+        for (String path : filesList) {
+            String fileName = Paths.get(path).getFileName().toString();
+            String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
+            try {
+                C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
+
+                for (String line : Files.readAllLines(Paths.get(path))) {
+                    String[] splitLine = line.split(":");
+                    if (op == SearchOperation.CONTAINS) {
+                        if (splitLine[0].equals(key) && splitLine[1].toLowerCase().contains(val.toLowerCase())) {
+                            setFields(path, obj);
+                            result.add(obj);
+                            break;
+                        }
+                    }
+                    if (op == SearchOperation.EQUALS) {
+                        if (splitLine[0].equals(key) && splitLine[1].toLowerCase().equals(val.toLowerCase())) {
+                            setFields(path, obj);
+                            result.add(obj);
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (result.size() == 0) {
+            return null;
+        } else {
+            return result;
+        }
+    }
+
+    public List<C> findAll(String key, float val, SearchOperation op) {
+        List<C> result = new ArrayList<>();
+        List<String> filesList = listFiles();
+        if(filesList == null) return null;
+
+        for (String path : filesList) {
+            String fileName = Paths.get(path).getFileName().toString();
+            String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
+            try {
+                C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
+
+                for (String line : Files.readAllLines(Paths.get(path))) {
+                    String[] splitLine = line.split(":");
+                    if (op == SearchOperation.CONTAINS) {
+                        if (splitLine[0].equals(key) && splitLine[1].contains(String.valueOf(val))) {
+                            setFields(path, obj);
+                            result.add(obj);
+                            break;
+                        }
+                    }
+                    if (op == SearchOperation.EQUALS) {
+                        if (splitLine[0].equals(key) && Float.parseFloat(splitLine[1])==val) {
+                            setFields(path, obj);
+                            result.add(obj);
+                            break;
+                        }
+                    }
+                    if (op == SearchOperation.GREATERTHAN) {
+                        if (splitLine[0].equals(key) && Float.parseFloat(splitLine[1]) > val) {
+                            setFields(path, obj);
+                            result.add(obj);
+                            break;
+                        }
+                    }
+                    if (op == SearchOperation.LESSTHAN) {
+                        if (splitLine[0].equals(key) && Float.parseFloat(splitLine[1]) < val) {
+                            setFields(path, obj);
+                            result.add(obj);
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (result.size() == 0) {
+            return null;
+        } else {
+            return result;
+        }
+    }
+
+    public List<C> findAll(String key, LocalDate val, SearchOperation op) {
+        List<C> result = new ArrayList<>();
+        List<String> filesList = listFiles();
+        if(filesList == null) return null;
+
+        for (String path : filesList) {
+            String fileName = Paths.get(path).getFileName().toString();
+            String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
+            try {
+                C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
+
+                for (String line : Files.readAllLines(Paths.get(path))) {
+                    String[] splitLine = line.split(":");
+                    if (op == SearchOperation.CONTAINS) {
+                        if (splitLine[0].equals(key) && splitLine[1].contains(String.valueOf(val))) {
+                            setFields(path, obj);
+                            result.add(obj);
+                            break;
+                        }
+                    }
+                    if (op == SearchOperation.EQUALS) {
+                        if (splitLine[0].equals(key) && LocalDate.parse(splitLine[1]).equals(val)) {
+                            setFields(path, obj);
+                            result.add(obj);
+                            break;
+                        }
+                    }
+                    if (op == SearchOperation.GREATERTHAN) {
+                        if (splitLine[0].equals(key) && LocalDate.parse(splitLine[1]).isAfter(val)) {
+                            setFields(path, obj);
+                            result.add(obj);
+                            break;
+                        }
+                    }
+                    if (op == SearchOperation.LESSTHAN) {
+                        if (splitLine[0].equals(key) && LocalDate.parse(splitLine[1]).isBefore(val)) {
+                            setFields(path, obj);
+                            result.add(obj);
+                            break;
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        if (result.size() == 0) {
+            return null;
+        } else {
+            return result;
+        }
+    }
+
     private void setFields(String path, C obj) {
         try {
             for (String line : Files.readAllLines(Paths.get(path))) {
                 String[] splitLine = line.split(":");
                 Field field = fileClass.getDeclaredField(splitLine[0]);
                 field.setAccessible(true);
-                if(field.getType()==float.class) {
+                if (field.getType() == float.class) {
                     field.set(obj, Float.valueOf(splitLine[1]));
                 }
-                if(field.getType()==String.class) {
+                if (field.getType() == String.class) {
                     field.set(obj, splitLine[1]);
                 }
-                if(field.getType()==LocalDate.class) {
+                if (field.getType() == LocalDate.class) {
                     field.set(obj, LocalDate.parse(splitLine[1]));
                 }
             }
@@ -202,7 +376,7 @@ public class Database<C> {
 
     private List<String> listFiles() {
         try (Stream<Path> walk = Files.walk(Paths.get(rootFolder + "/" + subFolder))) {
-            return walk.map(p -> p.toString())
+            return walk.map(Path::toString)
                     .filter(p -> p.matches(".+\\." + fileType))
                     .collect(Collectors.toList());
 
@@ -211,70 +385,4 @@ public class Database<C> {
             return null;
         }
     }
-    /*
-    public List<C> findAll() {
-        try (Stream<Path> walk = Files.walk(Paths.get(rootFolder + "/" + subFolder))) {
-            List<String> result = walk.map(p -> p.toString())
-                    .filter(p -> p.matches(".+\\." + fileType))
-                    .collect(Collectors.toList());
-
-            List<C> objList = new ArrayList<>();
-
-            for (String path : result) {
-                String fileName = Paths.get(path).getFileName().toString();
-                String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
-
-                C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
-
-                for (String line : Files.readAllLines(Paths.get(path))) {
-                    String[] splitLine = line.split(":");
-                    Field field = fileClass.getDeclaredField(splitLine[0]);
-                    field.setAccessible(true);
-                    field.set(obj, splitLine[1]);
-                }
-                objList.add(obj);
-            }
-            return objList;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public List<C> findAll(String key, SearchOperation operator, String value) {
-        try (Stream<Path> walk = Files.walk(Paths.get(rootFolder + "/" + subFolder))) {
-            List<String> result = walk.map(p -> p.toString())
-                    .filter(p -> p.matches(".+\\." + fileType))
-                    .collect(Collectors.toList());
-
-            List<C> objList = new ArrayList<>();
-
-            for (String path : result) {
-                for (String line : Files.readAllLines(Paths.get(path))) {
-                    String[] splitLine = line.split(":");
-                    if (key.equals(splitLine[0]) && value.equals(splitLine[1])) {
-                        String fileName = Paths.get(path).getFileName().toString();
-                        String id = fileName.substring(0, fileName.length() - (fileType.length() + 1));
-
-                        C obj = (C) fileClass.getConstructor(String.class).newInstance(id);
-
-                        for (String line2 : Files.readAllLines(Paths.get(path))) {
-                            String[] splitLine2 = line2.split(":");
-                            Field field = fileClass.getDeclaredField(splitLine2[0]);
-                            field.setAccessible(true);
-                            field.set(obj, splitLine2[1]);
-                        }
-                        objList.add(obj);
-                        break;
-                    }
-                }
-            }
-            return objList;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-     */
 }
