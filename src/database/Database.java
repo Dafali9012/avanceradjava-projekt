@@ -1,5 +1,6 @@
 package database;
 
+import annotations.Unsigned;
 import enums.SearchOperation;
 
 import java.io.IOException;
@@ -44,6 +45,7 @@ public class Database<C> {
             Field[] fields = obj.getClass().getDeclaredFields();
             for (Field f : fields) {
                 f.setAccessible(true);
+                //var b = f.getAnnotation(Unsigned.class);
                 dataList.add(f.getName() + ":" + f.get(obj));
             }
             Files.write(Paths.get(rootFolder + "/" + subFolder + "/" + obj.getId() + "." + fileType), dataList);
