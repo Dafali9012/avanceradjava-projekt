@@ -45,7 +45,11 @@ public class Database<C> {
             Field[] fields = obj.getClass().getDeclaredFields();
             for (Field f : fields) {
                 f.setAccessible(true);
-                //var b = f.getAnnotation(Unsigned.class);
+                if(f.getAnnotation(Unsigned.class) != null) {
+                    if(Float.valueOf(f.get(obj).toString()) < 0) {
+                        throw new IllegalArgumentException("Field cannot be negative");
+                    }
+                }
                 dataList.add(f.getName() + ":" + f.get(obj));
             }
             Files.write(Paths.get(rootFolder + "/" + subFolder + "/" + obj.getId() + "." + fileType), dataList);
@@ -65,9 +69,9 @@ public class Database<C> {
         }
     }
 
-    public C findOne(String key, String val, SearchOperation op) {
+    public C findOne(String key, SearchOperation op, String val) {
         if (op == SearchOperation.GREATERTHAN || op == SearchOperation.LESSTHAN) {
-            throw new IllegalArgumentException("Cannot compare Strings with less than/ greater than");
+            throw new UnsupportedOperationException("Cannot compare Strings with less than/ greater than");
         }
         List<String> filesList = listFiles();
         if(filesList == null) return null;
@@ -99,7 +103,7 @@ public class Database<C> {
         return null;
     }
 
-    public C findOne(String key, float val, SearchOperation op) {
+    public C findOne(String key, SearchOperation op, float val) {
         List<String> filesList = listFiles();
         if(filesList == null) return null;
         for (String path : filesList) {
@@ -142,7 +146,7 @@ public class Database<C> {
         return null;
     }
 
-    public C findOne(String key, LocalDate val, SearchOperation op) {
+    public C findOne(String key, SearchOperation op, LocalDate val) {
         List<String> filesList = listFiles();
         if(filesList == null) return null;
         for (String path : filesList) {
@@ -207,9 +211,9 @@ public class Database<C> {
         }
     }
 
-    public List<C> findAll(String key, String val, SearchOperation op) {
+    public List<C> findAll(String key, SearchOperation op, String val) {
         if (op == SearchOperation.GREATERTHAN || op == SearchOperation.LESSTHAN) {
-            throw new IllegalArgumentException("Cannot compare Strings with less than/ greater than");
+            throw new UnsupportedOperationException("Cannot compare Strings with less than/ greater than");
         }
         List<C> result = new ArrayList<>();
         List<String> filesList = listFiles();
@@ -249,7 +253,7 @@ public class Database<C> {
         }
     }
 
-    public List<C> findAll(String key, float val, SearchOperation op) {
+    public List<C> findAll(String key, SearchOperation op, float val) {
         List<C> result = new ArrayList<>();
         List<String> filesList = listFiles();
         if(filesList == null) return null;
@@ -302,7 +306,7 @@ public class Database<C> {
         }
     }
 
-    public List<C> findAll(String key, LocalDate val, SearchOperation op) {
+    public List<C> findAll(String key, SearchOperation op, LocalDate val) {
         List<C> result = new ArrayList<>();
         List<String> filesList = listFiles();
         if(filesList == null) return null;
